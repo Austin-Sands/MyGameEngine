@@ -278,6 +278,66 @@ void Scene::addSprite(Sprite* sprite, int spriteType)
 	}
 }
 
+void Scene::bound()
+{
+	//bound player
+	for(Sprite* current = entityHead; current != NULL; current = current->next)
+	{
+		if(current->isPlayer())
+		{
+			//check horizontal bounds
+			if(current->getX() < 0)
+			{
+				current->setPos(0, current->getY());
+			}
+			else if(current->getX() + current->getWidth() > SCREEN_WIDTH)
+			{
+				current->setPos(SCREEN_WIDTH - current->getWidth(), current->getY());
+			}
+
+			//check vertical bounds
+			if(current->getY() < 0)
+			{
+				current->setPos(current->getX(), 0);
+			}
+			else if(current->getY() + current->getHeight() > SCREEN_HEIGHT)
+			{
+				current->setPos(current->getX(), SCREEN_HEIGHT - current->getHeight());
+			}
+		}
+	}
+
+	//bound projectiles
+	Sprite* previous = NULL;
+	Sprite* current = projectileHead;
+
+	//check head
+	if(current != NULL && current == projectileHead && (current->getX() > SCREEN_WIDTH || current->getX() + current->getWidth() < 0 || current->getY() > SCREEN_HEIGHT || current->getY() + current->getHeight() < 0))
+	{
+		projectileHead = current->next;
+
+		delete current;
+		return;
+	}
+	else
+	{
+		while(current != NULL && !(current->getX() > SCREEN_WIDTH || current->getX() + current->getWidth() < 0 || current->getY() > SCREEN_HEIGHT || current->getY() + current->getHeight() < 0))
+		{
+			previous = current;
+			current = current->next;
+		}
+
+		if (current == NULL)
+		{
+			return;
+		}
+
+		previous->next = current->next;
+
+		delete current;
+	}
+}
+
 void Scene::draw()
 {
 
@@ -287,18 +347,18 @@ void Scene::draw()
 		current->draw();
 	}
 
-	Sprite* previous = NULL;
 	for (Sprite* current = projectileHead; current != NULL; current = current->next)
 	{
 		current->drawProjectiles();
+	}
+}
 
-		/*
-		 * Having an issue with bounding the projectiles. Getting unexpected behavior when trying to
-		 * delete objects in projectile list. I've been working on this portion for so long and it made the project late.
-		 * Pretty demoralizing.
-		 */
-	//	if(current->getX() - current->getWidth() < 0)
-	//	{
-	//	}
+void Scene::print()
+{
+	int count = 0;
+
+	for (Sprite* current = projectileHead; current != NULL; current = current->next)
+	{
+		count++;
 	}
 }

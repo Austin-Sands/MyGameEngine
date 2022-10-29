@@ -13,7 +13,9 @@ const int PLAYER_SPEED = 5;
 const int PLAYER_HEALTH = 10;
 const int PROJECTILE_SPEED = 20;
 const int ENEMY_HEALTH = 1;
-const int RELOAD_TIME = 15;
+const int RELOAD_TIME = 10;
+const int PROJECTILE_WIDTH = 20;
+const int PROJECTILE_HEIGHT = 12;
 
 Sprite::Sprite()
 {
@@ -76,8 +78,11 @@ Sprite::Sprite(Scene* scene, bool player, SpriteType spriteType, SDL_Texture* te
 	if (isPlayer()) { health = PLAYER_HEALTH; }
 	else { health = ENEMY_HEALTH; }
 
+
 	//load sprite image to texture. If no texture passed and default is used, it will print a warning to console
 	setTexture(texture);
+
+	if (spriteType == PROJECTILE) { projectile = true; }
 
 	//initialize pointer to sprite next in list
 	next = NULL;
@@ -93,15 +98,18 @@ Sprite::~Sprite()
 
 void Sprite::free()
 {
-	//if there is a texture saved, destroy it
-	if (spriteTexture != NULL)
+	if(!projectile)
 	{
-		SDL_DestroyTexture(spriteTexture);
-		spriteTexture = NULL;
+		//if there is a texture saved, destroy it
+		if (spriteTexture != NULL)
+		{
+			SDL_DestroyTexture(spriteTexture);
+			spriteTexture = NULL;
 
-		//reset dimensions since no texture
-		width = NULL;
-		height =NULL;
+			//reset dimensions since no texture
+			width = NULL;
+			height =NULL;
+		}
 	}
 
 	spriteScene = NULL;
@@ -172,7 +180,7 @@ void Sprite::fireProjectile()
 	if(isPlayer())
 	{
 		//fire speed limit
-		Sprite* projectile = new Sprite(spriteScene, false, PROJECTILE, spriteScene->getPlayerProjectile());
+		auto* projectile = new Sprite(spriteScene, false, PROJECTILE, spriteScene->getPlayerProjectile());
 
 		//set projectile position to originate at player center
 		projectile->setPos(this->center.x, this->center.y);
@@ -242,9 +250,6 @@ void Sprite::doPlayer()
 
 void Sprite::drawProjectiles()
 {
-	//calculate projectile movement
-	calcVector(PROJECTILE_SPEED);
-
 	//move projectile
 	x += dX;
 	y += dY;
@@ -271,7 +276,7 @@ void Sprite::calcImgAngle(SDL_Point spriteCenter)
 
 void Sprite::calcCenter()
 {
-	center = { x + (getWidth() / 2), y + (getHeight() / 2) };
+	center = { x + (width / 2), y + (height / 2) };
 }
 
 void Sprite::calcVector(int speed)

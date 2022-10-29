@@ -40,6 +40,7 @@ public:
 
 	//void sets sprite texture
 	void setTexture(SDL_Texture* texture);
+	void setProjectileTexture();
 
 	//adds sprite to renderer
 	void draw();
@@ -106,6 +107,7 @@ private:
 
 	//flag if sprite is player sprite
 	bool player;
+	bool projectile;
 
 	//health variable to tell if sprite is alive
 	int health;

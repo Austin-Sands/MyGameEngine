@@ -67,16 +67,18 @@ public:
 
 	//add sprite to scene sprite list
 	void addSprite(Sprite* sprite, int spriteType);
-	void removeSprite(Sprite* sprite, int spriteType);
 
 	//set projectile texture
 	void setPlayerProjectile(SDL_Texture* texture) { playerProjectileTexture = texture; }
 
-	//handle projectiles
-
+	//bound sprites
+	void bound();
 
 	//draw all sprites to renderer
 	void draw();
+
+	//print projectiles
+	void print();
 
 	//getters
 	int* getKeyboard() { return mKeyboard; }				//get keyboard state

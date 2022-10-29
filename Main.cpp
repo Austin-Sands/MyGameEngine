@@ -44,6 +44,9 @@ void initializePlayer();
 //input handler returns a quit flag
 bool handleInput();
 
+//handle logic
+void logic();
+
 //initialize SDL components being used by the program
 void SDLInit()
 {
@@ -76,6 +79,7 @@ void close()
 	//destroy any textures
 	SDL_DestroyTexture(playerTexture);
 	SDL_DestroyTexture(enemyTexture);
+	SDL_DestroyTexture(playerProjectileTexture);
 
 	//quit SDL and SDL libraries
 	IMG_Quit();
@@ -144,6 +148,12 @@ bool handleInput()
 	return quit;
 }
 
+void logic()
+{
+	//bounding
+	gameScene.bound();
+}
+
 //arguments passed per SDL documentation
 int main(int argc, char * argv[])
 {
@@ -168,8 +178,14 @@ int main(int argc, char * argv[])
 		//do scene input
 		quit = handleInput();
 
+		//handle logic
+		logic();
+
 		//draw scene to screen
 		draw();
+
+		gameScene.print();
+
 
 		//cap frames
 		gameScene.capFrames();
