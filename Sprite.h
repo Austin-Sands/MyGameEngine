@@ -40,7 +40,6 @@ public:
 
 	//void sets sprite texture
 	void setTexture(SDL_Texture* texture);
-	void setProjectileTexture();
 
 	//adds sprite to renderer
 	void draw();
@@ -54,14 +53,20 @@ public:
 	//input handler for player sprite
 	void doPlayer();
 
-	//handler for projectiles
-	void drawProjectiles();
+	//moves sprite using own dX dY
+	void moveSprite();
+
+	//handler for enemies
+	void moveEnemy(float speed);
 
 	//calculate image angle
-	void calcImgAngle(SDL_Point spriteCenter);
+	void calcImgAngle(SDL_Point origSpriteCenter, SDL_Point destSpriteCenter = { NULL, NULL });
 
 	//pointer variable for use with sprite lists
 	Sprite* next;
+
+	//sets health
+	void setHealth(int newHealth);
 
 	//getters
 	int getHealth() const { return health; }
@@ -69,7 +74,7 @@ public:
 	int getHeight() const { return height; }
 	SDL_Point getCenter() const { return center; }
 	bool isPlayer() const { return player; }
-	double getImgAngle() const { return imgAngle * 180 / M_PI; }
+	double getImgAngle() const { return imgAngle * M_PI / 180; }
 	int getX() const { return x; }
 	int getY() const { return y; }
 

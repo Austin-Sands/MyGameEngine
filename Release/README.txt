@@ -1,9 +1,12 @@
 Austin Sands
-10/28/2022
+12/05/2022
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-My game engine is very simple so far. I decided to use SDL2 and C++ as this is the coding language that I feel I have the best skills and understanding in. 
-Unfortunately, this was posted late. I appreciate your time in looking at my work.
+I based my final project game on the engine that I already started for this class. I expanded on the implementation a bit but not as much as I would have liked. 
+I had the intention of adding two more mechanics to the game including a flashlight that would slowly die and proportionaly increase enemy spawn rate/speed as well as darken the screen so you lose visibility. 
+Along with this I wanted to add battery pickups and a score that would also scale with the battery mechanic.
+
+As it stands, the game is meant to be a timed survival. You have three minutes before a rescue helicopter arrives, you have to survive the alien invasion.
 
 Some of the code I used can be referenced to SDL tutorials I completed on lazyfoo.net
 

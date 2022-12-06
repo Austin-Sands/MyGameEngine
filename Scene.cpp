@@ -9,6 +9,12 @@ Purpose: Implementation file for the Scene class for my game engine
 
 Scene::Scene()
 {
+	//initialize randomizer
+	srand( time(NULL) );
+
+	//initialize enemy count
+	enemyCount = 0;
+
 	//initialize variables
 	mWindow = NULL;
 	mRenderer = NULL;
@@ -24,6 +30,9 @@ Scene::Scene()
 	//initialize mouse button state
 	leftClick = false;
 
+	//initialize player
+	player = NULL;
+
 	//initialize list variables
 	entityHead = NULL;
 	entityTail = entityHead;
@@ -33,6 +42,9 @@ Scene::Scene()
 
 	//initialize projectile images
 	playerProjectileTexture = NULL;
+
+	//initialize enemy countdown
+	enemyCountdown = 30;
 
 	//create window
 	mWindow = SDL_CreateWindow("Simple Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -158,6 +170,12 @@ void Scene::setMousePos()
 	//get mouse position and set mouse position variables
 	SDL_GetMouseState(&mousePos.x, &mousePos.y);
 }//end setMousePos
+
+//get a random number between 0 and 1 for spawner
+int Scene::getRand()
+{
+	return rand() % 2;
+}
 
 bool Scene::doInput()
 {
@@ -307,40 +325,39 @@ void Scene::bound()
 		}
 	}
 
-	//bound projectiles
-	Sprite* previous = NULL;
-	Sprite* current = projectileHead;
+	////bound projectiles
+	//Sprite* previous = NULL;
+	//Sprite* current = projectileHead;
 
-	//check head
-	if(current != NULL && current == projectileHead && (current->getX() > SCREEN_WIDTH || current->getX() + current->getWidth() < 0 || current->getY() > SCREEN_HEIGHT || current->getY() + current->getHeight() < 0))
-	{
-		projectileHead = current->next;
+	////check head
+	//if(current != NULL && current == projectileHead && (current->getX() > SCREEN_WIDTH || current->getX() + current->getWidth() < 0 || current->getY() > SCREEN_HEIGHT || current->getY() + current->getHeight() < 0))
+	//{
+	//	projectileHead = current->next;
 
-		delete current;
-		return;
-	}
-	else
-	{
-		while(current != NULL && !(current->getX() > SCREEN_WIDTH || current->getX() + current->getWidth() < 0 || current->getY() > SCREEN_HEIGHT || current->getY() + current->getHeight() < 0))
-		{
-			previous = current;
-			current = current->next;
-		}
+	//	delete current;
+	//	return;
+	//}
+	//else
+	//{
+	//	while(current != NULL && !(current->getX() > SCREEN_WIDTH || current->getX() + current->getWidth() < 0 || current->getY() > SCREEN_HEIGHT || current->getY() + current->getHeight() < 0))
+	//	{
+	//		previous = current;
+	//		current = current->next;
+	//	}
 
-		if (current == NULL)
-		{
-			return;
-		}
+	//	if (current == NULL)
+	//	{
+	//		return;
+	//	}
 
-		previous->next = current->next;
+	//	previous->next = current->next;
 
-		delete current;
-	}
+	//	delete current;
+	//}
 }
 
 void Scene::draw()
 {
-
 	//iterate through entity sprite list and draw them to renderer
 	for (Sprite* current = entityHead; current != NULL; current = current->next)
 	{
@@ -349,10 +366,205 @@ void Scene::draw()
 
 	for (Sprite* current = projectileHead; current != NULL; current = current->next)
 	{
-		current->drawProjectiles();
+		current->draw();
 	}
 }
 
+void Scene::doProjectiles()
+{
+//bound projectiles
+	Sprite* previous = NULL;
+	Sprite* current = NULL;
+
+	for (current = projectileHead; current != NULL; current = current->next)
+	{
+		//move projectiles
+		current->moveSprite();
+
+		//check if projectile is colliding or out of bounds
+		if(projectileCollideEnemy(current) || current->getX() > SCREEN_WIDTH || current->getX() + current->getWidth() < 0 || current->getY() > SCREEN_HEIGHT || current->getY() + current->getHeight() < 0)
+		{
+			//check if head or tail
+			if (current == projectileTail)
+			{
+				projectileTail = previous;
+			}
+			if(current == projectileHead)
+			{
+				//if head, set new head to next node and continue through iterations
+				projectileHead = current->next;
+				continue;
+			}
+
+			//set previous node's next to current nodes next, eliminating current from the list
+			previous->next = current->next;
+
+			//free currents data
+			current->free();
+
+			//set current to the previous node
+			current = previous;
+		}
+
+		//set previous node to current node before iterating
+		previous = current;
+	}
+}
+
+int Scene::projectileCollideEnemy(Sprite* projectile)
+{
+	Sprite* current = NULL;
+
+	for(current = entityHead; current != NULL; current = current->next)
+	{
+		//if entity is not player and collides with projectile
+		if (!current->isPlayer() && collision(projectile->getX(), projectile->getY(), projectile->getWidth(), projectile->getHeight(), current->getX(), current->getY(), current->getWidth(), current->getHeight()))
+		{
+			//set colliding entity health to 0
+			current->setHealth(0);
+
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int Scene::collision(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2)
+{
+		//checks for a sprites image rect to be within the second sprites space. X AND Y positions must overlap
+		return (std::max(x1, x2) < std::min(x1 + w1, x2 + w2) && (std::max(y1, y2) < std::min(y1 + w1, y2 + w2)));
+}
+
+
+void Scene::doEnemies()
+{
+	Sprite* previous = entityHead;
+
+	for(Sprite* current = entityHead->next; current != NULL; current = current->next)
+	{
+		//if enemy
+		if(!current->isPlayer())
+		{
+			//calculate speed
+			//TODO change with battery
+			float enemySpeed = ENEMY_SPEED_BASE + (rand() % 6);
+
+			//move enemies
+			current->moveEnemy(enemySpeed);
+
+			//if enemy has no health
+			if(current->getHealth() == 0)
+			{
+				//if enemy is tail, set previous to tail
+				if(current == entityTail)
+				{
+					entityTail = previous;
+				}
+				//if enemy is head, set next in list as head
+				if(current == entityHead)
+				{
+					entityHead = current->next;
+					continue;
+				}
+
+				//set previous node's next to current nodes next, eliminating current from the list
+				previous->next = current->next;
+
+				//free currents data
+				current->free();
+
+				//set current to the previous node
+				current = previous;
+
+				//decrement enemy count
+				enemyCount--;
+			}
+
+			//set previous node to current node before iterating
+			previous = current;
+		}
+	}
+}
+
+void Scene::spawnEnemies(SDL_Texture* enemyTexture)
+{
+	//spawn only if countdown done and less than 15 enemies exist
+	if(--enemyCountdown <= 0 && enemyCount < ENEMY_SPAWN_LIMIT)
+	{
+		Sprite* enemy = new Sprite(this, false, ENTITY, enemyTexture);
+		int spawnX, spawnY;
+
+		//set spawn point to a border
+		//generate number from 0 to 1, if 0 enemy will spawn on left or right border, if 1 on top or bottom border
+		if(getRand() == 0)
+		{
+			//set spawnX to either left or right boundary
+			spawnX = getRand() * (SCREEN_WIDTH - enemy->getWidth());
+			//spawnY can be any y value in the height
+			spawnY = rand() % (SCREEN_HEIGHT - enemy->getHeight());
+		}
+		else
+		{
+			//set spawnX to any x value in width
+			spawnX = rand() % (SCREEN_WIDTH - enemy->getWidth());
+			//spawnY must be on a boundary
+			spawnY = getRand() * (SCREEN_HEIGHT - enemy->getHeight());
+		}
+
+		//set enemy position to spawn points
+		enemy->setPos(spawnX, spawnY);
+
+		//reset spawn timer
+		//TODO change with battery
+		enemyCountdown = 5 + (rand() % 25);
+
+		//iterate the enemyCounter
+		enemyCount++;
+	}
+}
+
+void Scene::collisionCheck()
+{
+	int x = player->getX(), y = player->getY(), width = player->getWidth(), height = player->getWidth();
+
+	x += width / 3;
+	y += height / 3;
+	width /= 4;
+	height /= 4;
+
+	for (Sprite* current = entityHead; current != NULL; current = current->next)
+	{
+		if (!current->isPlayer() && collision(x, y, width, height, current->getX(), current->getY(), current->getWidth(), current->getHeight()))
+		{
+			player->setHealth(0);
+			player->setHealth(0);
+		}
+	}
+}
+
+SDL_Point Scene::getPlayerPos()
+{
+	//iterate through entity list for player
+	for(Sprite* current = entityHead; entityHead != NULL; current = current->next)
+	{
+		//if player, return coords
+		if(current->isPlayer())
+		{
+			return current->getCenter();
+		}
+	}
+
+	//if player isn't found, return center of window
+	return { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+}
+
+void Scene::setPlayer(Sprite* playerSprite)
+{
+	player = playerSprite;
+}
+
+//TODO remove after testing
 void Scene::print()
 {
 	int count = 0;
@@ -361,4 +573,8 @@ void Scene::print()
 	{
 		count++;
 	}
+
+	//printf("Projectiles: %d\n", count);
+	//printf("Enemies: %d\n", enemyCount);
+	//printf("Player Health: %d\n", player->getHealth());
 }

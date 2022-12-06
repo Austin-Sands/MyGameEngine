@@ -12,20 +12,23 @@ Purpose: header file for Scene class for my game engine. REQUIRES SPRITE CLASS
 #include <SDL.h>
 #include <SDL_image.h>
 #include <string>
+#include <ctime>
 #include "Timer.h"
 #include "Sprite.h"
 
 //constants for screen size
 //change these for desired screen sizes, keyboard settings, render/window flags etc.
-const int SCREEN_WIDTH = 640;
+const int SCREEN_WIDTH = 1280;
 const int SCREEN_X_CENTER = SCREEN_WIDTH / 2;
-const int SCREEN_HEIGHT = 480;
+const int SCREEN_HEIGHT = 960;
 const int SCREEN_Y_CENTER = SCREEN_HEIGHT / 2;
 const int WINDOW_FLAGS = SDL_WINDOW_INPUT_GRABBED;
 const int RENDER_FLAGS = SDL_RENDERER_ACCELERATED;
 const int SCREEN_FPS = 30;
 const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 const int MAX_KEYBOARD_KEYS = 256;
+const float ENEMY_SPEED_BASE = 6;
+const int ENEMY_SPAWN_LIMIT = 25;
 
 //forward declaration
 class Sprite;
@@ -68,8 +71,12 @@ public:
 	//add sprite to scene sprite list
 	void addSprite(Sprite* sprite, int spriteType);
 
-	//set projectile texture
-	void setPlayerProjectile(SDL_Texture* texture) { playerProjectileTexture = texture; }
+	//set projectile and muzzle flash texture
+	void setPlayerProjectile(SDL_Texture* projectileTexture, SDL_Texture* muzzleFlashTexture)
+	{
+		playerProjectileTexture = projectileTexture;
+		playerMuzzleFlashTexture = muzzleFlashTexture;
+	}
 
 	//bound sprites
 	void bound();
@@ -77,15 +84,37 @@ public:
 	//draw all sprites to renderer
 	void draw();
 
-	//print projectiles
-	void print();
+	//handle projectiles
+	void doProjectiles();
+
+	//handle projectile collisions
+	int projectileCollideEnemy(Sprite* projectile);
+
+	//calculate if there was a collision
+	int collision(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2);
+
+	//handle enemies
+	void doEnemies();
+
+	//spawn enemies
+	void spawnEnemies(SDL_Texture* enemyTexture);
+
+	//check for collisions
+	void collisionCheck();
 
 	//getters
 	int* getKeyboard() { return mKeyboard; }				//get keyboard state
 	SDL_Renderer* getRenderer() const { return mRenderer; }	//get renderer
 	SDL_Point getMousePos() const { return mousePos; }		//handler for mouse position
 	bool getMouseLeft() const { return leftClick; }			//get mouse button state
+	SDL_Point getPlayerPos();								//return players position
+	void setPlayer(Sprite* playerSprite);					//sets player object
+	Sprite* getPlayer() { return player; }	//returns player health
 	SDL_Texture* getPlayerProjectile() const { return playerProjectileTexture; }	//get player projectile
+	SDL_Texture* getMuzzleFlash() const { return playerMuzzleFlashTexture; }	//get player projectile
+	int getEnemyCount() const { return enemyCount; }		//get number of enemy entities
+	void print();
+
 
 private:
 
@@ -123,5 +152,20 @@ private:
 
 	//hold texture for projectile sprite
 	SDL_Texture* playerProjectileTexture;
+
+	//hold texture for muzzle flash
+	SDL_Texture* playerMuzzleFlashTexture;
+
+	//enemy spawn countdown
+	float enemyCountdown;
+
+	//generate random number for spawner
+	int getRand();
+
+	//number of enemies in scene
+	int enemyCount;
+
+	//player object
+	Sprite* player;
 };
 #endif

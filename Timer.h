@@ -2,7 +2,8 @@
 Title:	Timer.h
 Author:	Austin Sands
 Date:	10/25/2022
-Purpose: header file for Timer class for my game engine. TODO pause function implementation
+Purpose: header file for Timer class for my game engine.
+TODO pause function implementation
  */
 
 #pragma once

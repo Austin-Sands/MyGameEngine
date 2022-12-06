@@ -10,12 +10,14 @@ Purpose: implementation file for Sprite class for my game engine
 
 //sprite constants
 const int PLAYER_SPEED = 5;
-const int PLAYER_HEALTH = 10;
-const int PROJECTILE_SPEED = 20;
+const int PLAYER_HEALTH = 1;
+const int PROJECTILE_SPEED = 30;
 const int ENEMY_HEALTH = 1;
-const int RELOAD_TIME = 10;
-const int PROJECTILE_WIDTH = 20;
-const int PROJECTILE_HEIGHT = 12;
+const int RELOAD_TIME = 8;
+const int PROJECTILE_WIDTH = 7;
+const int PROJECTILE_HEIGHT = 3;
+const float MUZZLE_LENGTH = 54;
+const float MUZZLEY_OFFSET = 16;
 
 Sprite::Sprite()
 {
@@ -98,19 +100,20 @@ Sprite::~Sprite()
 
 void Sprite::free()
 {
-	if(!projectile)
-	{
-		//if there is a texture saved, destroy it
-		if (spriteTexture != NULL)
-		{
-			SDL_DestroyTexture(spriteTexture);
+	////don't want to destroy projectile and enemy textures during game
+	//if(!projectile)
+	//{
+	//	//if there is a texture saved, destroy it
+	//	if (spriteTexture != NULL)
+	//	{
+	//		SDL_DestroyTexture(spriteTexture);
 			spriteTexture = NULL;
 
 			//reset dimensions since no texture
 			width = NULL;
 			height =NULL;
-		}
-	}
+	//	}
+	//}
 
 	spriteScene = NULL;
 
@@ -182,11 +185,19 @@ void Sprite::fireProjectile()
 		//fire speed limit
 		auto* projectile = new Sprite(spriteScene, false, PROJECTILE, spriteScene->getPlayerProjectile());
 
+		//calculate muzzle position for projectile origin
+		float muzzleX = center.x - (MUZZLEY_OFFSET * sin(getImgAngle())) + (MUZZLE_LENGTH * cos(getImgAngle()));
+		float muzzleY = center.y + (MUZZLEY_OFFSET * cos(getImgAngle())) + (MUZZLE_LENGTH * sin(getImgAngle()));
+
 		//set projectile position to originate at player center
-		projectile->setPos(this->center.x, this->center.y);
+		projectile->setPos(muzzleX, muzzleY);
 
 		//make projectile face same direction as player image
 		projectile->imgAngle = this->imgAngle;
+
+		//set muzzle rect and render muzzle flash
+		SDL_Rect muzzleTextureRect = { static_cast<int>(muzzleX - (6 * abs(sin(getImgAngle())))), static_cast<int>(muzzleY - (5 * abs(cos(getImgAngle())))), 10, 6 };
+		SDL_RenderCopyEx(spriteRenderer, spriteScene->getMuzzleFlash(),NULL, &muzzleTextureRect, imgAngle, NULL, SDL_FLIP_NONE);
 
 		//calculate dx and dy from image angle (direction facing)
 		projectile->calcVector(PROJECTILE_SPEED);
@@ -248,7 +259,7 @@ void Sprite::doPlayer()
 	}
 }
 
-void Sprite::drawProjectiles()
+void Sprite::moveSprite()
 {
 	//move projectile
 	x += dX;
@@ -256,22 +267,45 @@ void Sprite::drawProjectiles()
 
 	//calc center
 	calcCenter();
-
-	//draw
-	draw();
 }
 
-void Sprite::calcImgAngle(SDL_Point spriteCenter)
+void Sprite::moveEnemy(float speed)
 {
+	//find player
+	calcImgAngle(center, spriteScene->getPlayerPos());
+
+	//calculate vector to player
+	calcVector(speed);
+
+	//move enemy
+	moveSprite();
+}
+
+void Sprite::calcImgAngle(SDL_Point origSpriteCenter, SDL_Point destSpriteCenter )
+{
+	//variables to hold components
+	int xComponent = NULL;
+	int yComponent = NULL;
+
 	//we only want to change angle if is the player object
 	if(isPlayer())
 	{
 		//variables for x and y components
-		int xComponent = spriteScene->getMousePos().x - spriteCenter.x;
-		int yComponent = spriteScene->getMousePos().y - spriteCenter.y;
-
-		imgAngle = atan2(yComponent, xComponent) * 180 / M_PI;
+		xComponent = spriteScene->getMousePos().x - origSpriteCenter.x;
+		yComponent = spriteScene->getMousePos().y - origSpriteCenter.y;
 	}
+	else
+	{
+		xComponent = destSpriteCenter.x - origSpriteCenter.x;
+		yComponent = destSpriteCenter.y - origSpriteCenter.y;
+	}
+
+	imgAngle = atan2(yComponent, xComponent) * 180 / M_PI;
+}
+
+void Sprite::setHealth(int newHealth)
+{
+	health = newHealth;
 }
 
 void Sprite::calcCenter()
